@@ -6,10 +6,11 @@ import sys
 
 from github import Github
 
+
 def update_team(token, team):
     team = team.lower()
     permissions = None
-    permissions = {"engineering": "maintainer", "customer-success": "admin"}
+    permissions = {"engineering": "maintain", "customer-success": "admin"}
     if team not in permissions:
         print(f"Team {team} not setup with permissions")
         sys.exit(1)
@@ -23,7 +24,9 @@ def update_team(token, team):
     for repo in org.get_repos(
         type="all"
     ):  # type: ‘all’, ‘public’, ‘private’, ‘forks’, ‘sources’, ‘member’
-        print(f"Updating https://github.com/replciated-collab/{repo.name}")
+        print(
+            f"Updating https://github.com/replciated-collab/{repo.name} : {permissions[team]}"
+        )
         githubTeam.add_to_repos(repo)
         githubTeam.update_team_repository(repo, permissions[team])
 
