@@ -9,10 +9,9 @@ from github import Github
 
 def update_team(token, team):
     team = team.lower()
-    permissions = None
     # pull, push, admin, maintain, triage
     # https://docs.github.com/en/rest/teams/teams#add-or-update-team-repository-permissions
-    permissions = {"engineering": "maintain", "customer-success": "admin", "sales": "pull"}
+    permissions = {"engineering": "maintain", "customer-success": "admin", "sales": "triage"}
     if team not in permissions:
         print(f"Team {team} not setup with permissions")
         sys.exit(1)
