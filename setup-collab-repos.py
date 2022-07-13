@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     if "replicated-collab-dev" in args.orgs:
         print("Processing replicated-collab-dev")
-        permissions = {"engineering": "maintain", "ce-team": "maintain"}
+        permissions = {"engineering": "maintain", "ce-team": "admin"}
         org = GithubOrg(args.token, "replicated-collab-dev")
         org.set_permissions(permissions)
         org.update_teams()
