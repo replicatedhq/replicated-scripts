@@ -2,34 +2,35 @@
 
 import argparse
 import os
-import sys
 
 from github import Github
 
 
-def update_team(token, team):
-    team = team.lower()
-    # pull, push, admin, maintain, triage
-    # https://docs.github.com/en/rest/teams/teams#add-or-update-team-repository-permissions
-    permissions = {"engineering": "maintain", "customer-success": "admin", "sales": "triage"}
-    if team not in permissions:
-        print(f"Team {team} not setup with permissions")
-        sys.exit(1)
-    else:
-        print(f"Setting {team} to {permissions}")
+class GithubOrg:
+    def __init__(self, token, name) -> None:
+        self.name = name
+        self.gh = Github(token)
+        self.org = self.gh.get_organization(name)
 
-    g = Github(token)
-    org = g.get_organization("replicated-collab")
-    githubTeam = org.get_team_by_slug(team)
+    def set_permissions(self, permissions):
+        # pull, push, admin, maintain, triage
+        # https://docs.github.com/en/rest/teams/teams#add-or-update-team-repository-permissions
+        perms = {k.lower(): v.lower() for k, v in permissions.items()}
+        self.permissions = perms
 
-    for repo in org.get_repos(
-        type="all"
-    ):  # type: ‘all’, ‘public’, ‘private’, ‘forks’, ‘sources’, ‘member’
-        print(
-            f"Updating https://github.com/replciated-collab/{repo.name} : {permissions[team]}"
-        )
-        githubTeam.add_to_repos(repo)
-        githubTeam.update_team_repository(repo, permissions[team])
+    def update_teams(self):
+        for team, permission in self.permissions.items():
+            print(f"Setting {team} to {permission}")
+            githubTeam = self.org.get_team_by_slug(team)
+
+            for repo in self.org.get_repos(
+                type="all"
+            ):  # type: ‘all’, ‘public’, ‘private’, ‘forks’, ‘sources’, ‘member’
+                print(
+                    f"Updating https://github.com/{self.org}/{repo.name} : {permission}"
+                )
+                githubTeam.add_to_repos(repo)
+                githubTeam.update_team_repository(repo, permission)
 
 
 def get_args():
@@ -39,10 +40,32 @@ def get_args():
         help="GitHub Access Token, defaults to environment GITHUB_ACCESS_TOKEN",
         default=os.environ["GITHUB_ACCESS_TOKEN"],
     )
-    parser.add_argument("-t", help="The team to update", dest="team", required=True)
+    parser.add_argument(
+        "--orgs",
+        help="The orgs to update",
+        dest="orgs",
+        nargs="+",
+        default=["replicated-collab", "replicated-collab-dev"],
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = get_args()
-    update_team(args.token, args.team)
+    if "replicated-collab" in args.orgs:
+        print("Processing replicated-collab")
+        permissions = {
+            "engineering": "maintain",
+            "customer-success": "admin",
+            "sales": "triage",
+        }
+        org = GithubOrg(args.token, "replicated-collab")
+        org.set_permissions(permissions)
+        org.update_teams()
+
+    if "replicated-collab-dev" in args.orgs:
+        print("Processing replicated-collab-dev")
+        permissions = {"engineering": "maintain", "ce-team": "maintain"}
+        org = GithubOrg(args.token, "replicated-collab-dev")
+        org.set_permissions(permissions)
+        org.update_teams()
